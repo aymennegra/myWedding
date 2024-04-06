@@ -4,9 +4,9 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/sporty
-    username: root
-    password:
+    url: jdbc:mysql://mywedding-esprit-fad8.a.aivencloud.com:28558/mywedding?ssl-mode=REQUIRED
+    username: avnadmin
+    password: AVNS_mzVkZ33kAdXakaT5cXJ
 
   jpa:
     hibernate:
