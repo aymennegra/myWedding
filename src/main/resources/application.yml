@@ -4,9 +4,9 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://avnadmin:AVNS_1fPcB7o5aINYWnLnlwp@mywed-esprit-fad8.a.aivencloud.com:28558/mywed?ssl-mode=REQUIRED
-    username: avnadmin
-    password: AVNS_1fPcB7o5aINYWnLnlwp
+    url: jdbc:mysql://localhost:3306/sporty
+    username: root
+    password:
 
   jpa:
     hibernate:
@@ -14,7 +14,6 @@ spring:
       show-sql: false
       properties:
         hibernate.format_sql: true
-        hibernate.dialect: org.hibernate.dialect.MySQLDialect
 
   server:
     port: 8080
