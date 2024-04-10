@@ -2,6 +2,7 @@ package com.mywedding.weddingHall.controller;
 
 
 import com.mywedding.weddingHall.dto.dtoRequests.AddWeddingHallRequest;
+import com.mywedding.weddingHall.dto.dtoRequests.DeleteImageRequest;
 import com.mywedding.weddingHall.services.WeddingHallService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -9,9 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/")
@@ -26,14 +24,31 @@ public class WeddingHallController {
         return weddingHallService.createWeddingHall(addWeddingHallRequest);
     }
 
-    @PostMapping(path = "admin/wedding-halls/images/{weddingHallId}",consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Object> uploadImages(@PathVariable Long weddingHallId, @RequestPart(value = "files") MultipartFile[] files) {
-       return weddingHallService.processUploadedFiles( files,weddingHallId);
+    @PostMapping(path = "admin/wedding-halls/upload-images/{weddingHallId}")
+    public ResponseEntity<Object> uploadImage(@RequestParam("image")MultipartFile images [] ,@PathVariable Long weddingHallId) {
+       return weddingHallService.uploadImage(images,weddingHallId);
+    }
+
+    @GetMapping("admin/wedding-halls/getImageUrl/{fileName}")
+    public ResponseEntity<?> downloadImage(@PathVariable String fileName){
+        byte[] imageData=weddingHallService.downloadImage(fileName);
+        return ResponseEntity.status(HttpStatus.OK)
+                .contentType(MediaType.valueOf("image/png"))
+                .body(imageData);
     }
 
     @GetMapping("admin/wedding-halls/gethallinfo/{weddingHallId}")
     public ResponseEntity<Object> getWeddingHallsWithImages(@PathVariable Long weddingHallId) {
-        return weddingHallService.getWeddingHallWithImages(weddingHallId);
+        return weddingHallService.getWeddingHallById(weddingHallId);
+    }
+    @GetMapping("admin/wedding-halls/getAll")
+    public ResponseEntity<Object> getWeddingHalls() {
+        return weddingHallService.getWeddingHalls();
+    }
+
+    @DeleteMapping("admin/wedding-halls/delete-image")
+    public ResponseEntity<Object> deleteWeddingHallImage(@RequestBody DeleteImageRequest deleteImageRequest) {
+        return weddingHallService.deleteWeddingHallImage(deleteImageRequest);
     }
 
 }

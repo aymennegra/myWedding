@@ -1,14 +1,16 @@
 package com.mywedding.weddingHall.services;
 
 import com.mywedding.weddingHall.dto.dtoRequests.AddWeddingHallRequest;
+import com.mywedding.weddingHall.dto.dtoRequests.DeleteImageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
 
 public interface WeddingHallService {
 
     ResponseEntity<Object> createWeddingHall(AddWeddingHallRequest addWeddingHallRequest);
-    ResponseEntity<Object> processUploadedFiles(MultipartFile[] files,Long weddingHallId);
-    ResponseEntity<Object> getWeddingHallWithImages(Long weddingHallId);
+    ResponseEntity<Object> getWeddingHallById(Long weddingHallId);
+    ResponseEntity<Object> getWeddingHalls();
+    ResponseEntity<Object> uploadImage(MultipartFile[] uploadedImages,Long weddingHallId);
+    byte[] downloadImage(String fileName);
+    ResponseEntity<Object> deleteWeddingHallImage(DeleteImageRequest deleteImageRequest);
 }

@@ -1,4 +1,4 @@
-package com.mywedding.identity.config;
+package com.mywedding.config;
 
 
 import com.mywedding.identity.entities.Role;
