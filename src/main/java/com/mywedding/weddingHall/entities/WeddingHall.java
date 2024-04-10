@@ -22,7 +22,7 @@ public class WeddingHall {
 
     private String location;
 
-    private double price;
+    private Double price;
 
     private String description;
 

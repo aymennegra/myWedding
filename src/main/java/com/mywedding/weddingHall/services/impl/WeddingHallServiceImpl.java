@@ -5,8 +5,10 @@ import com.mywedding.identity.entities.User;
 import com.mywedding.identity.repository.UserRepository;
 import com.mywedding.weddingHall.dto.dtoRequests.AddWeddingHallRequest;
 import com.mywedding.weddingHall.dto.dtoRequests.DeleteImageRequest;
+import com.mywedding.weddingHall.dto.dtoRequests.UpdateWeddingHallRequest;
 import com.mywedding.weddingHall.dto.dtoResponses.AddWeddingHallResponse;
 import com.mywedding.weddingHall.dto.dtoResponses.GetWeddingHallResponse;
+import com.mywedding.weddingHall.dto.dtoResponses.UpdateWeddingHallResponse;
 import com.mywedding.weddingHall.entities.WeddingHall;
 import com.mywedding.weddingHall.entities.WeddingHallImage;
 import com.mywedding.weddingHall.repositories.WeddingHallImageRepository;
@@ -62,7 +64,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 return ResponseHandler.responseBuilder("Event created", HttpStatus.OK,
                         addWeddingHallResponse);
             } else {
-                return ResponseHandler.responseBuilder("sorry, you are not allowed to create events..", HttpStatus.UNAUTHORIZED, new ArrayList<>());
+                return ResponseHandler.responseBuilder("sorry, you are not allowed to create wedding halls..", HttpStatus.UNAUTHORIZED, new ArrayList<>());
             }
         } catch (Exception e) {
             return ResponseHandler.responseBuilder("Unauthorized", HttpStatus.UNAUTHORIZED, new ArrayList<>());
@@ -72,43 +74,53 @@ public class WeddingHallServiceImpl implements WeddingHallService {
     public ResponseEntity<Object> uploadImage(MultipartFile[] uploadedImages, Long weddingHallId) {
         // Get the current timestamp
         LocalDateTime now = LocalDateTime.now();
-
         // Format the timestamp to include milliseconds
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmssSSS");
         String timestamp = now.format(formatter);
+
+        // Retrieve the authenticated user
+        UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        // Check if the user exists in the database based on the email (assuming email is the username)
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
         // Retrieve the wedding hall
         WeddingHall weddingHall = weddingHallRepository.findById(weddingHallId)
                 .orElseThrow(() -> new EntityNotFoundException("Wedding hall not found"));
 
         List<String> successMessages = new ArrayList<>();
         List<String> errorMessages = new ArrayList<>();
+            if (user.equals(weddingHall.getCreatedBy())){
+                for (MultipartFile uploadedImage : uploadedImages) {
+                    try {
+                        WeddingHallImage savedImage = weddingHallImageRepository.save(WeddingHallImage.builder()
+                                .name(timestamp + uploadedImage.getOriginalFilename())
+                                .type(uploadedImage.getContentType())
+                                .imageData(ImageUtils.compressImage(uploadedImage.getBytes()))
+                                .weddingHall(weddingHall).build());
 
-        for (MultipartFile uploadedImage : uploadedImages) {
-            try {
-                WeddingHallImage savedImage = weddingHallImageRepository.save(WeddingHallImage.builder()
-                        .name(timestamp + uploadedImage.getOriginalFilename())
-                        .type(uploadedImage.getContentType())
-                        .imageData(ImageUtils.compressImage(uploadedImage.getBytes()))
-                        .weddingHall(weddingHall).build());
-
-                if (savedImage != null) {
-                    successMessages.add("File uploaded successfully: " + uploadedImage.getOriginalFilename());
+                        if (savedImage != null) {
+                            successMessages.add("File uploaded successfully: " + uploadedImage.getOriginalFilename());
+                        }
+                    } catch (Exception e) {
+                        // Handle any exceptions, for example, log the error
+                        errorMessages.add("Failed to upload file: " + uploadedImage.getOriginalFilename());
+                    }
                 }
-            } catch (Exception e) {
-                // Handle any exceptions, for example, log the error
-                e.printStackTrace();
-                errorMessages.add("Failed to upload file: " + uploadedImage.getOriginalFilename());
-            }
-        }
 
-        if (!errorMessages.isEmpty()) {
-            // If there were any errors, return a bad request status with error messages
-            return ResponseHandler.responseBuilder("Failed to upload one or more files", HttpStatus.BAD_REQUEST, errorMessages);
-        } else {
-            // If all files were uploaded successfully, return an OK status with success messages
-            return ResponseHandler.responseBuilder("All files uploaded successfully", HttpStatus.OK, successMessages);
-        }
+                if (!errorMessages.isEmpty()) {
+                    // If there were any errors, return a bad request status with error messages
+                    return ResponseHandler.responseBuilder("Failed to upload one or more files", HttpStatus.BAD_REQUEST, errorMessages);
+                } else {
+                    // If all files were uploaded successfully, return an OK status with success messages
+                    return ResponseHandler.responseBuilder("All files uploaded successfully", HttpStatus.OK, successMessages);
+                }
+            }else {
+                return ResponseHandler.responseBuilder("sorry, you are not allowed to upload images to this wedding hall.. ", HttpStatus.FORBIDDEN, successMessages);
+            }
     }
+
     @Override
     public byte[] downloadImage(String fileName){
         Optional<WeddingHallImage> dbImageData = weddingHallImageRepository.findByName(fileName);
@@ -220,7 +232,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             weddingHallImageRepository.deleteWeddingHallImageById(deleteImageRequest.getImageId());
             weddingHallImageRepository.flush();
 
-            return ResponseHandler.responseBuilder("Image deleted successfully", HttpStatus.OK, null);
+            return ResponseHandler.responseBuilder("Image deleted successfully", HttpStatus.OK, new ArrayList<>());
         } catch (EntityNotFoundException e) {
             return ResponseHandler.responseBuilder(e.getMessage(), HttpStatus.NOT_FOUND, null);
         } catch (IllegalArgumentException e) {
@@ -228,6 +240,62 @@ public class WeddingHallServiceImpl implements WeddingHallService {
         } catch (Exception e) {
             return ResponseHandler.responseBuilder("Failed to delete image", HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
+    }
+
+    @Override
+    public ResponseEntity<Object> UpdateWeddingHall(Long weddingHallId,UpdateWeddingHallRequest updateWeddingHallRequest) {
+
+        try {
+            // Retrieve the authenticated user
+            UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+            // Check if the user exists in the database based on the email (assuming email is the username)
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            // Retrieve the wedding hall
+            WeddingHall weddingHall = weddingHallRepository.findById(weddingHallId)
+                    .orElseThrow(() -> new EntityNotFoundException("Wedding hall not found"));
+
+            if(weddingHall.getCreatedBy().equals(user))
+            {
+                if (updateWeddingHallRequest.getName() == null) {
+                    weddingHall.setName(weddingHall.getName());
+                }else {
+                    weddingHall.setName(updateWeddingHallRequest.getName());
+                }
+                if (updateWeddingHallRequest.getLocation() == null) {
+                    weddingHall.setLocation(weddingHall.getLocation());
+                }else {
+                    weddingHall.setLocation(updateWeddingHallRequest.getLocation());
+                }
+                if (updateWeddingHallRequest.getPrice() == null) {
+                    weddingHall.setPrice(weddingHall.getPrice());
+                }else {
+                    weddingHall.setPrice(updateWeddingHallRequest.getPrice());
+                }
+                if (updateWeddingHallRequest.getDescription() == null) {
+                    weddingHall.setDescription(weddingHall.getDescription());
+                }else {
+                    weddingHall.setDescription(updateWeddingHallRequest.getDescription());
+                }
+                weddingHallRepository.save(weddingHall);
+                UpdateWeddingHallResponse updateWeddingHallResponse = new UpdateWeddingHallResponse();
+                updateWeddingHallResponse.setName(weddingHall.getName());
+                updateWeddingHallResponse.setLocation(weddingHall.getLocation());
+                updateWeddingHallResponse.setPrice(weddingHall.getPrice());
+                updateWeddingHallResponse.setDescription(weddingHall.getDescription());
+                return ResponseHandler.responseBuilder("Wedding hall Edited successfully", HttpStatus.OK,
+                        updateWeddingHallResponse);
+
+            }else {
+                return ResponseHandler.responseBuilder("sorry, you are not allowed to upload images to this wedding hall.. ", HttpStatus.FORBIDDEN, new ArrayList<>());
+            }
+        }catch (Exception e){
+            return ResponseHandler.responseBuilder("updated failed ", HttpStatus.NOT_FOUND, new ArrayList<>());
+
+        }
+
     }
 
 }

@@ -7,18 +7,18 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/user")
+@RequestMapping("/api/v1/")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
-    @GetMapping("/profile")
+    @GetMapping("profile")
     public ResponseEntity<Object> getUserProfile() {
         return userService.getUserProfile();
     }
 
-    @PutMapping("/update")
+    @PutMapping("update")
     public ResponseEntity<Object>  updateUserProfile(@RequestBody UserProfileRequest userProfileRequest) {
         // Call the updateUserProfile() method from AuthenticationService and return the result
         return userService.updateUserProfile(userProfileRequest);
