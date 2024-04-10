@@ -15,4 +15,5 @@ public interface WeddingHallService {
     byte[] downloadImage(String fileName);
     ResponseEntity<Object> deleteWeddingHallImage(DeleteImageRequest deleteImageRequest);
     ResponseEntity<Object> UpdateWeddingHall(Long weddingHallId,UpdateWeddingHallRequest updateWeddingHallRequest);
+    //ResponseEntity<Object> DeleteWeddingHall(Long weddingHallId);
 }

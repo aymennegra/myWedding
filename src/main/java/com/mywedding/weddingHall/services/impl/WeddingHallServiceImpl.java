@@ -207,15 +207,18 @@ public class WeddingHallServiceImpl implements WeddingHallService {
     public ResponseEntity<Object> deleteWeddingHallImage(DeleteImageRequest deleteImageRequest) {
         try {
             // Retrieve the authenticated user
-            User authenticatedUser = userRepository.findById(deleteImageRequest.getUserId())
-                    .orElseThrow(() -> new EntityNotFoundException("Authenticated user not found"));
+            UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+            // Check if the user exists in the database based on the email (assuming email is the username)
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
             // Retrieve the wedding hall
             WeddingHall weddingHall = weddingHallRepository.findById(deleteImageRequest.getWeddingHallId())
                     .orElseThrow(() -> new EntityNotFoundException("Wedding hall not found"));
 
             // Ensure that the authenticated user is the creator of the wedding hall
-            if (!authenticatedUser.equals(weddingHall.getCreatedBy())) {
+            if (!user.equals(weddingHall.getCreatedBy())) {
                 return ResponseHandler.responseBuilder("You are not authorized to delete images for this wedding hall", HttpStatus.UNAUTHORIZED, new ArrayList<>());
             }
 
@@ -297,5 +300,27 @@ public class WeddingHallServiceImpl implements WeddingHallService {
         }
 
     }
+
+//    @Override
+//    public ResponseEntity<Object> DeleteWeddingHall(Long weddingHallId) {
+//        try{
+//            // Retrieve the authenticated user
+//            UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+//
+//            // Check if the user exists in the database based on the email (assuming email is the username)
+//            User user = userRepository.findByEmail(userDetails.getUsername())
+//                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+//
+//            // Retrieve the wedding hall
+//            WeddingHall weddingHall = weddingHallRepository.findById(weddingHallId)
+//                    .orElseThrow(() -> new EntityNotFoundException("Wedding hall not found"));
+//            if(weddingHall.getCreatedBy().equals(user)){
+//
+//            }
+//        }catch (Exception e){
+//            return ResponseHandler.responseBuilder("Failed to delete image", HttpStatus.INTERNAL_SERVER_ERROR, null);
+//
+//        }
+//    }
 
 }
