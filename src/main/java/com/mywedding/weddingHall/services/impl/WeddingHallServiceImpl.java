@@ -59,7 +59,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 addWeddingHallResponse.setLocation(addWeddingHallRequest.getLocation());
                 addWeddingHallResponse.setPrice(addWeddingHallRequest.getPrice());
                 addWeddingHallResponse.setDescription(addWeddingHallRequest.getDescription());
-                addWeddingHallResponse.setCreatedBy(user);
+                addWeddingHallResponse.setCreatedBy(user.getFirstname());
 
                 return ResponseHandler.responseBuilder("Event created", HttpStatus.OK,
                         addWeddingHallResponse);
@@ -237,9 +237,9 @@ public class WeddingHallServiceImpl implements WeddingHallService {
 
             return ResponseHandler.responseBuilder("Image deleted successfully", HttpStatus.OK, new ArrayList<>());
         } catch (EntityNotFoundException e) {
-            return ResponseHandler.responseBuilder(e.getMessage(), HttpStatus.NOT_FOUND, null);
+            return ResponseHandler.responseBuilder(e.getMessage(), HttpStatus.NOT_FOUND, new ArrayList<>());
         } catch (IllegalArgumentException e) {
-            return ResponseHandler.responseBuilder(e.getMessage(), HttpStatus.BAD_REQUEST, null);
+            return ResponseHandler.responseBuilder(e.getMessage(), HttpStatus.BAD_REQUEST, new ArrayList<>());
         } catch (Exception e) {
             return ResponseHandler.responseBuilder("Failed to delete image", HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
@@ -295,32 +295,38 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 return ResponseHandler.responseBuilder("sorry, you are not allowed to upload images to this wedding hall.. ", HttpStatus.FORBIDDEN, new ArrayList<>());
             }
         }catch (Exception e){
-            return ResponseHandler.responseBuilder("updated failed ", HttpStatus.NOT_FOUND, new ArrayList<>());
+            return ResponseHandler.responseBuilder("updated failed ", HttpStatus.INTERNAL_SERVER_ERROR, new ArrayList<>());
 
         }
 
     }
 
-//    @Override
-//    public ResponseEntity<Object> DeleteWeddingHall(Long weddingHallId) {
-//        try{
-//            // Retrieve the authenticated user
-//            UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-//
-//            // Check if the user exists in the database based on the email (assuming email is the username)
-//            User user = userRepository.findByEmail(userDetails.getUsername())
-//                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-//
-//            // Retrieve the wedding hall
-//            WeddingHall weddingHall = weddingHallRepository.findById(weddingHallId)
-//                    .orElseThrow(() -> new EntityNotFoundException("Wedding hall not found"));
-//            if(weddingHall.getCreatedBy().equals(user)){
-//
-//            }
-//        }catch (Exception e){
-//            return ResponseHandler.responseBuilder("Failed to delete image", HttpStatus.INTERNAL_SERVER_ERROR, null);
-//
-//        }
-//    }
+    @Override
+    public ResponseEntity<Object> DeleteWeddingHall(Long weddingHallId) {
+        try{
+            // Retrieve the authenticated user
+            UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+            // Check if the user exists in the database based on the email (assuming email is the username)
+            User user = userRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            // Retrieve the wedding hall
+            WeddingHall weddingHall = weddingHallRepository.findById(weddingHallId)
+                    .orElseThrow(() -> new EntityNotFoundException("Wedding hall not found"));
+            if(weddingHall.getCreatedBy().equals(user)){
+                weddingHallRepository.deleteWeddingHall(weddingHallId);
+                weddingHallRepository.flush();
+                return ResponseHandler.responseBuilder("Wedding hall deleted successfully", HttpStatus.OK, new ArrayList<>());
+            }else
+            {
+                return ResponseHandler.responseBuilder("Failed to delete Wedding hall", HttpStatus.INTERNAL_SERVER_ERROR, new ArrayList<>());
+            }
+
+        }catch (Exception e){
+            return ResponseHandler.responseBuilder("Failed to delete image", HttpStatus.INTERNAL_SERVER_ERROR, new ArrayList<>());
+
+        }
+    }
 
 }

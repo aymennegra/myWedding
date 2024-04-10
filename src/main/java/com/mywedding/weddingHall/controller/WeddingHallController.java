@@ -55,5 +55,9 @@ public class WeddingHallController {
     public ResponseEntity<Object> updateWeddingHall(@PathVariable Long weddingHallId,@RequestBody UpdateWeddingHallRequest updateWeddingHallRequest) {
         return weddingHallService.UpdateWeddingHall(weddingHallId,updateWeddingHallRequest);
     }
+    @DeleteMapping("wedding-halls/delete/{weddingHallId}")
+    public ResponseEntity<Object> deleteWeddingHall(@PathVariable Long weddingHallId) {
+        return weddingHallService.DeleteWeddingHall(weddingHallId);
+    }
 
 }

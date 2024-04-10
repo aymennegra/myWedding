@@ -10,5 +10,5 @@ public class AddWeddingHallResponse {
     private String location;
     private double price;
     private String description;
-    private User createdBy;
+    private String createdBy;
 }
