@@ -1,13 +1,11 @@
-package com.mywedding.weddingEvents.dto.dtoRequests;
-
+package com.mywedding.weddingHall.dto.dtoResponses;
 
 import com.mywedding.identity.entities.User;
-import jakarta.persistence.ManyToOne;
 import lombok.Data;
-import org.antlr.v4.runtime.misc.NotNull;
 
 @Data
-public class AddEventRequest {
+public class AddWeddingHallResponse {
+    private Long id;
     private String name;
     private String location;
     private double price;

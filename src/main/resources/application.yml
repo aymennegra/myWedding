@@ -17,3 +17,11 @@ spring:
 
   server:
     port: 8080
+
+resources:
+  static-locations: classpath:/src/img/
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB

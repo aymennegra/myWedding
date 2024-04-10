@@ -1,11 +1,11 @@
-package com.mywedding.weddingEvents.dto.dtoResponses;
+package com.mywedding.weddingHall.dto.dtoRequests;
+
 
 import com.mywedding.identity.entities.User;
 import lombok.Data;
 
 @Data
-public class AddEventResponse {
-    private Long id;
+public class AddWeddingHallRequest {
     private String name;
     private String location;
     private double price;
