@@ -22,6 +22,7 @@ public class User implements UserDetails {
     private String phone;
     private String password;
     private Role role;
+    private UserType userType;
     private String refreshToken;
 
 

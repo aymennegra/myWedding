@@ -2,6 +2,7 @@ package com.mywedding.weddingHall.services.impl;
 
 import com.mywedding.identity.dto.dtoResponses.ResponseHandler;
 import com.mywedding.identity.entities.User;
+import com.mywedding.identity.entities.UserType;
 import com.mywedding.identity.repository.UserRepository;
 import com.mywedding.weddingHall.dto.dtoRequests.AddWeddingHallRequest;
 import com.mywedding.weddingHall.dto.dtoRequests.DeleteImageRequest;
@@ -44,7 +45,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             // Check if the user exists in the database based on the email (assuming email is the username)
             User user = userRepository.findByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-            if (user.isAdmin()) {
+            if (user.isAdmin()||user.getUserType().equals(UserType.WEDDING_HALL_OWNER)) {
                 //save wedding event info
                 WeddingHall weddingHall = new WeddingHall();
                 weddingHall.setName(addWeddingHallRequest.getName());
@@ -53,13 +54,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 weddingHall.setDescription(addWeddingHallRequest.getDescription());
                 weddingHall.setCreatedBy(user);
                 weddingHallRepository.save(weddingHall);
-                AddWeddingHallResponse addWeddingHallResponse = new AddWeddingHallResponse();
-                addWeddingHallResponse.setId(weddingHall.getId());
-                addWeddingHallResponse.setName(addWeddingHallRequest.getName());
-                addWeddingHallResponse.setLocation(addWeddingHallRequest.getLocation());
-                addWeddingHallResponse.setPrice(addWeddingHallRequest.getPrice());
-                addWeddingHallResponse.setDescription(addWeddingHallRequest.getDescription());
-                addWeddingHallResponse.setCreatedBy(user.getFirstname());
+                AddWeddingHallResponse addWeddingHallResponse = getAddWeddingHallResponse(addWeddingHallRequest, weddingHall, user);
 
                 return ResponseHandler.responseBuilder("Event created", HttpStatus.OK,
                         addWeddingHallResponse);
@@ -70,6 +65,18 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             return ResponseHandler.responseBuilder("Unauthorized", HttpStatus.UNAUTHORIZED, new ArrayList<>());
         }
     }
+
+    private static AddWeddingHallResponse getAddWeddingHallResponse(AddWeddingHallRequest addWeddingHallRequest, WeddingHall weddingHall, User user) {
+        AddWeddingHallResponse addWeddingHallResponse = new AddWeddingHallResponse();
+        addWeddingHallResponse.setId(weddingHall.getId());
+        addWeddingHallResponse.setName(addWeddingHallRequest.getName());
+        addWeddingHallResponse.setLocation(addWeddingHallRequest.getLocation());
+        addWeddingHallResponse.setPrice(addWeddingHallRequest.getPrice());
+        addWeddingHallResponse.setDescription(addWeddingHallRequest.getDescription());
+        addWeddingHallResponse.setCreatedBy(user.getFirstname());
+        return addWeddingHallResponse;
+    }
+
     @Override
     public ResponseEntity<Object> uploadImage(MultipartFile[] uploadedImages, Long weddingHallId) {
         // Get the current timestamp
@@ -91,18 +98,16 @@ public class WeddingHallServiceImpl implements WeddingHallService {
 
         List<String> successMessages = new ArrayList<>();
         List<String> errorMessages = new ArrayList<>();
-            if (user.equals(weddingHall.getCreatedBy())){
+            if (user.equals(weddingHall.getCreatedBy())||user.isAdmin()){
                 for (MultipartFile uploadedImage : uploadedImages) {
                     try {
-                        WeddingHallImage savedImage = weddingHallImageRepository.save(WeddingHallImage.builder()
+                        weddingHallImageRepository.save(WeddingHallImage.builder()
                                 .name(timestamp + uploadedImage.getOriginalFilename())
                                 .type(uploadedImage.getContentType())
                                 .imageData(ImageUtils.compressImage(uploadedImage.getBytes()))
                                 .weddingHall(weddingHall).build());
 
-                        if (savedImage != null) {
-                            successMessages.add("File uploaded successfully: " + uploadedImage.getOriginalFilename());
-                        }
+                        successMessages.add("File uploaded successfully: " + uploadedImage.getOriginalFilename());
                     } catch (Exception e) {
                         // Handle any exceptions, for example, log the error
                         errorMessages.add("Failed to upload file: " + uploadedImage.getOriginalFilename());
@@ -122,10 +127,16 @@ public class WeddingHallServiceImpl implements WeddingHallService {
     }
 
     @Override
-    public byte[] downloadImage(String fileName){
-        Optional<WeddingHallImage> dbImageData = weddingHallImageRepository.findByName(fileName);
-        byte[] images=ImageUtils.decompressImage(dbImageData.get().getImageData());
-        return images;
+    public byte[] downloadImage(String fileName) {
+        Optional<WeddingHallImage> dbImageDataOptional = weddingHallImageRepository.findByName(fileName);
+        if (dbImageDataOptional.isPresent()) {
+            WeddingHallImage dbImageData = dbImageDataOptional.get();
+            return ImageUtils.decompressImage(dbImageData.getImageData());
+        } else {
+            // Handle the case where the image with the given filename is not found
+            // For example, you could throw an exception or return a default image
+            return null; // Or throw an exception, depending on your use case
+        }
     }
 
     @Override
@@ -139,19 +150,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             List<WeddingHallImage> images = weddingHallImageRepository.findByWeddingHall(weddingHall);
 
             // Prepare the response object
-            GetWeddingHallResponse response = new GetWeddingHallResponse();
-            response.setId(weddingHall.getId());
-            response.setName(weddingHall.getName());
-            response.setLocation(weddingHall.getLocation());
-            response.setPrice(weddingHall.getPrice());
-            response.setDescription(weddingHall.getDescription());
-            // Populate the list of image URLs
-            List<String> imageUrls = new ArrayList<>();
-            for (WeddingHallImage image : images) {
-                imageUrls.add("http://localhost:8080/api/v1/admin/wedding-halls/getImageUrl/"+image.getName()); // Assuming you have a method getImagePath() to get the path of the image
-            }
-            // Update the response object with image URLs
-            response.setImageUrls(imageUrls); // Assuming you have setter for images in GetWeddingHallResponse
+            GetWeddingHallResponse response = getWeddingHallResponse(weddingHall, images);
 
             return ResponseHandler.responseBuilder("Retrieved wedding hall with images", HttpStatus.OK, response);
         } catch (EntityNotFoundException e) {
@@ -175,23 +174,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 List<WeddingHallImage> images = weddingHallImageRepository.findByWeddingHall(weddingHall);
 
                 // Prepare the response object for the current wedding hall
-                GetWeddingHallResponse response = new GetWeddingHallResponse();
-                response.setId(weddingHall.getId());
-                response.setName(weddingHall.getName());
-                response.setLocation(weddingHall.getLocation());
-                response.setPrice(weddingHall.getPrice());
-                response.setDescription(weddingHall.getDescription());
-
-                // Populate the list of clickable image URLs for the current wedding hall
-                List<String> imageUrls = new ArrayList<>();
-                for (WeddingHallImage image : images) {
-                    // Assuming you have a method getImagePath() to get the path of the image
-                    String imageUrl = "http://localhost:8080/api/v1/admin/wedding-halls/getImageUrl/" + image.getName(); // Update the base URL accordingly
-                    imageUrls.add(imageUrl);
-                }
-
-                // Update the response object with image URLs
-                response.setImageUrls(imageUrls); // Assuming you have setter for images in GetWeddingHallResponse
+                GetWeddingHallResponse response = getWeddingHallResponse(weddingHall, images);
 
                 // Add the response object for the current wedding hall to the list
                 weddingHallResponses.add(response);
@@ -201,6 +184,27 @@ public class WeddingHallServiceImpl implements WeddingHallService {
         } catch (Exception e) {
             return ResponseHandler.responseBuilder("Failed to retrieve wedding halls with images", HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
+    }
+
+    private static GetWeddingHallResponse getWeddingHallResponse(WeddingHall weddingHall, List<WeddingHallImage> images) {
+        GetWeddingHallResponse response = new GetWeddingHallResponse();
+        response.setId(weddingHall.getId());
+        response.setName(weddingHall.getName());
+        response.setLocation(weddingHall.getLocation());
+        response.setPrice(weddingHall.getPrice());
+        response.setDescription(weddingHall.getDescription());
+
+        // Populate the list of clickable image URLs for the current wedding hall
+        List<String> imageUrls = new ArrayList<>();
+        for (WeddingHallImage image : images) {
+            // Assuming you have a method getImagePath() to get the path of the image
+            String imageUrl = "http://localhost:8080/api/v1/admin/wedding-halls/getImageUrl/" + image.getName(); // Update the base URL accordingly
+            imageUrls.add(imageUrl);
+        }
+
+        // Update the response object with image URLs
+        response.setImageUrls(imageUrls); // Assuming you have setter for images in GetWeddingHallResponse
+        return response;
     }
 
     @Override
@@ -218,24 +222,23 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                     .orElseThrow(() -> new EntityNotFoundException("Wedding hall not found"));
 
             // Ensure that the authenticated user is the creator of the wedding hall
-            if (!user.equals(weddingHall.getCreatedBy())) {
+            if (user.equals(weddingHall.getCreatedBy())||user.isAdmin()) {
+                // Retrieve the image associated with the wedding hall
+                WeddingHallImage image = weddingHallImageRepository.findById(deleteImageRequest.getImageId())
+                        .orElseThrow(() -> new EntityNotFoundException("Image not found"));
+
+                // Ensure the image is associated with the correct wedding hall
+                if (!weddingHall.equals(image.getWeddingHall())) {
+                    return ResponseHandler.responseBuilder("Image does not belong to the specified wedding hall", HttpStatus.NOT_FOUND, new ArrayList<>());
+                }
+                // Delete the image
+                weddingHallImageRepository.deleteWeddingHallImageById(deleteImageRequest.getImageId());
+                weddingHallImageRepository.flush();
+                return ResponseHandler.responseBuilder("Image deleted successfully", HttpStatus.OK, new ArrayList<>());
+            }else {
                 return ResponseHandler.responseBuilder("You are not authorized to delete images for this wedding hall", HttpStatus.UNAUTHORIZED, new ArrayList<>());
             }
 
-            // Retrieve the image associated with the wedding hall
-            WeddingHallImage image = weddingHallImageRepository.findById(deleteImageRequest.getImageId())
-                    .orElseThrow(() -> new EntityNotFoundException("Image not found"));
-
-            // Ensure the image is associated with the correct wedding hall
-            if (!weddingHall.equals(image.getWeddingHall())) {
-                return ResponseHandler.responseBuilder("Image does not belong to the specified wedding hall", HttpStatus.NOT_FOUND, new ArrayList<>());
-            }
-
-            // Delete the image
-            weddingHallImageRepository.deleteWeddingHallImageById(deleteImageRequest.getImageId());
-            weddingHallImageRepository.flush();
-
-            return ResponseHandler.responseBuilder("Image deleted successfully", HttpStatus.OK, new ArrayList<>());
         } catch (EntityNotFoundException e) {
             return ResponseHandler.responseBuilder(e.getMessage(), HttpStatus.NOT_FOUND, new ArrayList<>());
         } catch (IllegalArgumentException e) {
@@ -260,7 +263,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             WeddingHall weddingHall = weddingHallRepository.findById(weddingHallId)
                     .orElseThrow(() -> new EntityNotFoundException("Wedding hall not found"));
 
-            if(weddingHall.getCreatedBy().equals(user))
+            if(weddingHall.getCreatedBy().equals(user)||user.isAdmin())
             {
                 if (updateWeddingHallRequest.getName() == null) {
                     weddingHall.setName(weddingHall.getName());

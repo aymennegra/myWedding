@@ -10,6 +10,7 @@ import com.mywedding.identity.dto.dtoResponses.SignUpResponse;
 import com.mywedding.identity.entities.RefreshToken;
 import com.mywedding.identity.entities.Role;
 import com.mywedding.identity.entities.User;
+import com.mywedding.identity.entities.UserType;
 import com.mywedding.identity.repository.RefreshTokenRepository;
 import com.mywedding.identity.repository.UserRepository;
 import com.mywedding.identity.services.AuthenticationService;
@@ -63,6 +64,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 user.setLastname(signUpRequest.getLastname());
                 user.setPhone(signUpRequest.getPhone());
                 user.setRole(Role.USER);
+                user.setUserType(UserType.VISITOR);
                 user.setRefreshToken(extractedRefreshtokenId);
                 user.setPassword(passwordEncoder.encode(signUpRequest.getPassword()));
                 userRepository.save(user);
@@ -74,19 +76,25 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 refreshTokenRepository.save(refreshTokenEntity);
                 //get response
                 var jwt = jwtService.generateToken(user);
-                SignUpResponse signUpResponse = new SignUpResponse();
-                signUpResponse.setFirstname(signUpRequest.getFirstname());
-                signUpResponse.setLastname(signUpRequest.getLastname());
-                signUpResponse.setEmail(signUpRequest.getEmail());
-                signUpResponse.setPhone(signUpRequest.getPhone());
-                signUpResponse.setRefreshToken(user.getRefreshToken());
-                signUpResponse.setAccessToken(jwt);
+                SignUpResponse signUpResponse = getSignUpResponse(signUpRequest, user, jwt);
                 return ResponseHandler.responseBuilder("user created", HttpStatus.OK,
                         signUpResponse);
             } catch (Exception e) {
                 return ResponseHandler.responseBuilder("Unauthorized", HttpStatus.UNAUTHORIZED, new ArrayList<>());
             }
         }
+    }
+
+    private static SignUpResponse getSignUpResponse(SignUpRequest signUpRequest, User user, String jwt) {
+        SignUpResponse signUpResponse = new SignUpResponse();
+        signUpResponse.setFirstname(signUpRequest.getFirstname());
+        signUpResponse.setLastname(signUpRequest.getLastname());
+        signUpResponse.setEmail(signUpRequest.getEmail());
+        signUpResponse.setPhone(signUpRequest.getPhone());
+        signUpResponse.setUserType(user.getUserType());
+        signUpResponse.setRefreshToken(user.getRefreshToken());
+        signUpResponse.setAccessToken(jwt);
+        return signUpResponse;
     }
 
     public ResponseEntity<Object> signin(SignInRequest signInRequest) {
@@ -119,6 +127,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             jwtAuthenticationResponse.setRefreshToken(user.getRefreshToken());
             jwtAuthenticationResponse.setTokenExpirationDate(expirationDate);
             jwtAuthenticationResponse.setFirstname(user.getFirstname());
+            jwtAuthenticationResponse.setUserType(user.getUserType());
 
             return ResponseHandler.responseBuilder("Connected successfully", HttpStatus.OK,
                     jwtAuthenticationResponse);
