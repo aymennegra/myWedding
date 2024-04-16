@@ -1,5 +1,7 @@
 package com.mywedding.identity.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.mywedding.weddingHall.entities.UserReview;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
@@ -24,6 +26,9 @@ public class User implements UserDetails {
     private Role role;
     private UserType userType;
     private String refreshToken;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<UserReview> ratings;
 
 
     @Override

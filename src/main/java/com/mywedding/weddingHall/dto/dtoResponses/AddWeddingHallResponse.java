@@ -8,6 +8,7 @@ public class AddWeddingHallResponse {
     private Long id;
     private String name;
     private String location;
+    private int seats_number;
     private double price;
     private String description;
     private String createdBy;

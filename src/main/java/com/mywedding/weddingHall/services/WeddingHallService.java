@@ -1,5 +1,6 @@
 package com.mywedding.weddingHall.services;
 
+import com.mywedding.weddingHall.dto.dtoRequests.AddRatingAndCommentRequest;
 import com.mywedding.weddingHall.dto.dtoRequests.AddWeddingHallRequest;
 import com.mywedding.weddingHall.dto.dtoRequests.DeleteImageRequest;
 import com.mywedding.weddingHall.dto.dtoRequests.UpdateWeddingHallRequest;
@@ -16,4 +17,5 @@ public interface WeddingHallService {
     ResponseEntity<Object> deleteWeddingHallImage(DeleteImageRequest deleteImageRequest);
     ResponseEntity<Object> UpdateWeddingHall(Long weddingHallId,UpdateWeddingHallRequest updateWeddingHallRequest);
     ResponseEntity<Object> DeleteWeddingHall(Long weddingHallId);
+    ResponseEntity<Object> addRatingAndComment(AddRatingAndCommentRequest addRatingAndCommentRequest);
 }

@@ -1,6 +1,7 @@
 package com.mywedding.weddingHall.controller;
 
 
+import com.mywedding.weddingHall.dto.dtoRequests.AddRatingAndCommentRequest;
 import com.mywedding.weddingHall.dto.dtoRequests.AddWeddingHallRequest;
 import com.mywedding.weddingHall.dto.dtoRequests.DeleteImageRequest;
 import com.mywedding.weddingHall.dto.dtoRequests.UpdateWeddingHallRequest;
@@ -28,6 +29,10 @@ public class WeddingHallController {
     @PostMapping(path = "wedding-halls/upload-images/{weddingHallId}")
     public ResponseEntity<Object> uploadImage(@RequestParam("image")MultipartFile images [] ,@PathVariable Long weddingHallId) {
        return weddingHallService.uploadImage(images,weddingHallId);
+    }
+    @PostMapping(path = "wedding-halls/addRatingAndComment")
+    public ResponseEntity<Object> addRatingAndComment(@RequestBody AddRatingAndCommentRequest addRatingAndCommentRequest) {
+       return weddingHallService.addRatingAndComment(addRatingAndCommentRequest);
     }
 
     @GetMapping("wedding-halls/getImageUrl/{fileName}")

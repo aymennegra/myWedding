@@ -8,6 +8,7 @@ import lombok.Data;
 public class AddWeddingHallRequest {
     private String name;
     private String location;
+    private int seats_number;
     private double price;
     private String description;
     private User createdBy;
