@@ -29,7 +29,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
 
         // Check if the request path is signin or signup
-        if (requestURI.equals("/api/v1/auth/signin") || requestURI.equals("/api/v1/auth/signup")) {
+        if (requestURI.equals("/api/v1/auth/signin") || requestURI.equals("/api/v1/auth/signup")|| requestURI.equals("/api/v1/wedding-halls/getImageUrl/**")) {
             // If it's signin or signup, proceed without authentication
             filterChain.doFilter(request, response);
             return;

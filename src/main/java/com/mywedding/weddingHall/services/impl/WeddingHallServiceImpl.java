@@ -107,7 +107,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                                 .imageData(ImageUtils.compressImage(uploadedImage.getBytes()))
                                 .weddingHall(weddingHall).build());
 
-                        successMessages.add("File uploaded successfully: " + uploadedImage.getOriginalFilename());
+                        successMessages.add("File uploaded successfully: " +"http://localhost:8080/api/v1/wedding-halls/getImageUrl/" + timestamp + uploadedImage.getOriginalFilename());
                     } catch (Exception e) {
                         // Handle any exceptions, for example, log the error
                         errorMessages.add("Failed to upload file: " + uploadedImage.getOriginalFilename());
@@ -198,7 +198,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
         List<String> imageUrls = new ArrayList<>();
         for (WeddingHallImage image : images) {
             // Assuming you have a method getImagePath() to get the path of the image
-            String imageUrl = "http://localhost:8080/api/v1/admin/wedding-halls/getImageUrl/" + image.getName(); // Update the base URL accordingly
+            String imageUrl = "http://localhost:8080/api/v1/wedding-halls/getImageUrl/" + image.getName(); // Update the base URL accordingly
             imageUrls.add(imageUrl);
         }
 
