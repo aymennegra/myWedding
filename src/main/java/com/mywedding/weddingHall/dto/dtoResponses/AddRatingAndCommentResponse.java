@@ -7,4 +7,5 @@ public class AddRatingAndCommentResponse {
     private int rating;
     private String comment;
     private String username;
+    private String time;
 }

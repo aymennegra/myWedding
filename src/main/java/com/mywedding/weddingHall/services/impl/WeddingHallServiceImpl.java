@@ -220,6 +220,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             AddRatingAndCommentResponse userReviewResponse = new AddRatingAndCommentResponse();
             userReviewResponse.setRating(review.getRating());
             userReviewResponse.setComment(review.getComment());
+            userReviewResponse.setTime(review.getTime());
             // Optionally, you can include other user-related information here
             userReviewResponse.setUsername(review.getUser().getFirstname() + " " + review.getUser().getLastname());
             userReviewResponses.add(userReviewResponse);
@@ -356,6 +357,10 @@ public class WeddingHallServiceImpl implements WeddingHallService {
 
     public ResponseEntity<Object> addRatingAndComment(AddRatingAndCommentRequest addRatingAndCommentRequest) {
         try {
+            LocalDateTime now = LocalDateTime.now();
+            // Format the timestamp to include milliseconds
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmssSSS");
+            String timestamp = now.format(formatter);
             // Retrieve the authenticated user
             UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
@@ -374,6 +379,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             UserReview ratingComment = new UserReview();
             ratingComment.setRating(addRatingAndCommentRequest.getRating());
             ratingComment.setComment(addRatingAndCommentRequest.getComment());
+            ratingComment.setTime(timestamp);
             ratingComment.setUser(user);
             ratingComment.setWeddingHall(weddingHall);
 
@@ -383,7 +389,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             AddRatingAndCommentResponse addRatingAndCommentResponse = new AddRatingAndCommentResponse();
             addRatingAndCommentResponse.setUsername(user.getFirstname() + " " + user.getLastname());
             addRatingAndCommentResponse.setRating(addRatingAndCommentRequest.getRating());
-            addRatingAndCommentResponse.setComment(addRatingAndCommentRequest.getComment());
+            addRatingAndCommentResponse.setTime(timestamp);
 
             return ResponseHandler.responseBuilder("Thank you for your feedback :)", HttpStatus.OK, addRatingAndCommentResponse);
         } catch (EntityNotFoundException e) {

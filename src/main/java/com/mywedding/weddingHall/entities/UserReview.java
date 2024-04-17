@@ -19,6 +19,8 @@ public class UserReview {
 
     private String comment;
 
+    private String time;
+
     @ManyToOne
     private User user;
 
