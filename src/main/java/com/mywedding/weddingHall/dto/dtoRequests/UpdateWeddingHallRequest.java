@@ -6,6 +6,7 @@ import lombok.Data;
 public class UpdateWeddingHallRequest {
     private String name;
     private String adress;
+    private int seats_number;
     private Double latitude;
     private Double longitude;
     private Double price;

@@ -317,6 +317,14 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 }else {
                     weddingHall.setName(updateWeddingHallRequest.getName());
                 }
+                if (updateWeddingHallRequest.getSeats_number()== 0) {
+                    // If the seats_number in the update request is null, keep the existing value
+                    weddingHall.setSeats_number(weddingHall.getSeats_number());
+                } else {
+                    // If the seats_number in the update request is not null, update the value
+                    weddingHall.setSeats_number(updateWeddingHallRequest.getSeats_number());
+                }
+
                 if (updateWeddingHallRequest.getAdress() == null) {
                     weddingHall.setAdress(weddingHall.getAdress());
                 }else {
@@ -347,6 +355,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 updateWeddingHallResponse.setName(weddingHall.getName());
                 updateWeddingHallResponse.setAdress(weddingHall.getAdress());
                 updateWeddingHallResponse.setPrice(weddingHall.getPrice());
+                updateWeddingHallResponse.setSeats_number(weddingHall.getSeats_number());
                 updateWeddingHallResponse.setDescription(weddingHall.getDescription());
                 return ResponseHandler.responseBuilder("Wedding hall Edited successfully", HttpStatus.OK,
                         updateWeddingHallResponse);

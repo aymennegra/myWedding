@@ -12,6 +12,7 @@ public class UpdateWeddingHallResponse {
     private String adress;
     private double latitude;
     private double longitude;
+    private int seats_number;
     private Double price;
     private String description;
     private List<WeddingHallImage> images = new ArrayList<>();
