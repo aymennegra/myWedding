@@ -9,7 +9,9 @@ import java.util.List;
 @Data
 public class UpdateWeddingHallResponse {
     private String name;
-    private String location;
+    private String adress;
+    private double latitude;
+    private double longitude;
     private Double price;
     private String description;
     private List<WeddingHallImage> images = new ArrayList<>();

@@ -30,6 +30,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -54,7 +55,9 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 //save wedding event info
                 WeddingHall weddingHall = new WeddingHall();
                 weddingHall.setName(addWeddingHallRequest.getName());
-                weddingHall.setLocation(addWeddingHallRequest.getLocation());
+                weddingHall.setAdress(addWeddingHallRequest.getAdress());
+                weddingHall.setLatitude(addWeddingHallRequest.getLatitude());
+                weddingHall.setLongitude(addWeddingHallRequest.getLongitude());
                 weddingHall.setSeats_number(addWeddingHallRequest.getSeats_number());
                 weddingHall.setPrice(addWeddingHallRequest.getPrice());
                 weddingHall.setDescription(addWeddingHallRequest.getDescription());
@@ -76,7 +79,9 @@ public class WeddingHallServiceImpl implements WeddingHallService {
         AddWeddingHallResponse addWeddingHallResponse = new AddWeddingHallResponse();
         addWeddingHallResponse.setId(weddingHall.getId());
         addWeddingHallResponse.setName(addWeddingHallRequest.getName());
-        addWeddingHallResponse.setLocation(addWeddingHallRequest.getLocation());
+        addWeddingHallResponse.setAdress(addWeddingHallRequest.getAdress());
+        addWeddingHallResponse.setLatitude(addWeddingHallRequest.getLatitude());
+        addWeddingHallResponse.setLongitude(addWeddingHallRequest.getLongitude());
         addWeddingHallResponse.setSeats_number(addWeddingHallRequest.getSeats_number());
         addWeddingHallResponse.setPrice(addWeddingHallRequest.getPrice());
         addWeddingHallResponse.setDescription(addWeddingHallRequest.getDescription());
@@ -152,30 +157,36 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             // Retrieve the wedding hall
             WeddingHall weddingHall = weddingHallRepository.findById(weddingHallId)
                     .orElseThrow(() -> new EntityNotFoundException("Wedding hall not found"));
+
             // Retrieve images associated with the wedding hall
             List<WeddingHallImage> images = weddingHallImageRepository.findByWeddingHall(weddingHall);
+            // Retrieve reviews associated with the wedding hall
             List<UserReview> reviews = ratingCommentRepository.findByWeddingHall(weddingHall);
 
-            // Prepare the response object
-            GetWeddingHallResponse response = getWeddingHallResponse(weddingHall, images,reviews);
+            // Calculate average rating
+            double averageRating = calculateAverageRating(reviews);
 
-            return ResponseHandler.responseBuilder("Retrieved wedding hall with images", HttpStatus.OK, response);
+            // Prepare the response object
+            GetWeddingHallResponse response = getWeddingHallResponse(weddingHall, images, reviews, averageRating);
+
+            return ResponseHandler.responseBuilder("Retrieved wedding hall with images and reviews", HttpStatus.OK, response);
         } catch (EntityNotFoundException e) {
             return ResponseHandler.responseBuilder("Wedding hall not found", HttpStatus.NOT_FOUND, null);
         } catch (Exception e) {
-            return ResponseHandler.responseBuilder("Failed to retrieve wedding hall with images", HttpStatus.INTERNAL_SERVER_ERROR, null);
+            return ResponseHandler.responseBuilder("Failed to retrieve wedding hall with images and reviews", HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
     }
+
 
     public ResponseEntity<Object> getWeddingHalls() {
         try {
             // Retrieve all wedding halls
             List<WeddingHall> weddingHalls = weddingHallRepository.findAll();
 
-            // Prepare a list to hold wedding halls with images
+            // Prepare a list to hold wedding halls with images and average ratings
             List<GetWeddingHallResponse> weddingHallResponses = new ArrayList<>();
 
-            // Iterate over each wedding hall to retrieve its associated images and reviews
+            // Iterate over each wedding hall to retrieve its associated images, reviews, and calculate average rating
             for (WeddingHall weddingHall : weddingHalls) {
                 // Retrieve images associated with the wedding hall
                 List<WeddingHallImage> images = weddingHallImageRepository.findByWeddingHall(weddingHall);
@@ -183,24 +194,29 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 // Retrieve reviews associated with the wedding hall
                 List<UserReview> reviews = ratingCommentRepository.findByWeddingHall(weddingHall);
 
+                // Calculate average rating
+                double averageRating = calculateAverageRating(reviews);
+
                 // Prepare the response object for the current wedding hall
-                GetWeddingHallResponse response = getWeddingHallResponse(weddingHall, images, reviews);
+                GetWeddingHallResponse response = getWeddingHallResponse(weddingHall, images, reviews, averageRating);
 
                 // Add the response object for the current wedding hall to the list
                 weddingHallResponses.add(response);
             }
 
-            return ResponseHandler.responseBuilder("Retrieved all wedding halls with images and reviews", HttpStatus.OK, weddingHallResponses);
+            return ResponseHandler.responseBuilder("Retrieved all wedding halls with images, reviews, and average ratings", HttpStatus.OK, weddingHallResponses);
         } catch (Exception e) {
-            return ResponseHandler.responseBuilder("Failed to retrieve wedding halls with images and reviews", HttpStatus.INTERNAL_SERVER_ERROR, null);
+            return ResponseHandler.responseBuilder("Failed to retrieve wedding halls with images, reviews, and average ratings", HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
     }
 
-    private static GetWeddingHallResponse getWeddingHallResponse(WeddingHall weddingHall, List<WeddingHallImage> images, List<UserReview> reviews) {
+    private static GetWeddingHallResponse getWeddingHallResponse(WeddingHall weddingHall, List<WeddingHallImage> images, List<UserReview> reviews, double averageRating) {
         GetWeddingHallResponse response = new GetWeddingHallResponse();
         response.setId(weddingHall.getId());
         response.setName(weddingHall.getName());
-        response.setLocation(weddingHall.getLocation());
+        response.setAdress(weddingHall.getAdress());
+        response.setLatitude(weddingHall.getLatitude());
+        response.setLongitude(weddingHall.getLongitude());
         response.setPrice(weddingHall.getPrice());
         response.setSeats_number(weddingHall.getSeats_number());
         response.setDescription(weddingHall.getDescription());
@@ -226,8 +242,15 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             userReviewResponses.add(userReviewResponse);
         }
         response.setUsersReview(userReviewResponses);
+
         // Update the response object with image URLs
         response.setImageUrls(imageUrls); // Assuming you have setter for images in GetWeddingHallResponse
+
+        // Set average rating
+        DecimalFormat formatRating = new DecimalFormat("#.#");
+
+        response.setAverageRating(Double.parseDouble(formatRating.format(averageRating)));
+
         return response;
     }
 
@@ -294,10 +317,20 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 }else {
                     weddingHall.setName(updateWeddingHallRequest.getName());
                 }
-                if (updateWeddingHallRequest.getLocation() == null) {
-                    weddingHall.setLocation(weddingHall.getLocation());
+                if (updateWeddingHallRequest.getAdress() == null) {
+                    weddingHall.setAdress(weddingHall.getAdress());
                 }else {
-                    weddingHall.setLocation(updateWeddingHallRequest.getLocation());
+                    weddingHall.setAdress(updateWeddingHallRequest.getAdress());
+                }
+                if (updateWeddingHallRequest.getLatitude() == null) {
+                    weddingHall.setLatitude(weddingHall.getLatitude());
+                }else {
+                    weddingHall.setLatitude(updateWeddingHallRequest.getLatitude());
+                }
+                if (updateWeddingHallRequest.getLongitude() == null) {
+                    weddingHall.setLongitude(weddingHall.getLongitude());
+                }else {
+                    weddingHall.setLongitude(updateWeddingHallRequest.getLongitude());
                 }
                 if (updateWeddingHallRequest.getPrice() == null) {
                     weddingHall.setPrice(weddingHall.getPrice());
@@ -312,7 +345,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
                 weddingHallRepository.save(weddingHall);
                 UpdateWeddingHallResponse updateWeddingHallResponse = new UpdateWeddingHallResponse();
                 updateWeddingHallResponse.setName(weddingHall.getName());
-                updateWeddingHallResponse.setLocation(weddingHall.getLocation());
+                updateWeddingHallResponse.setAdress(weddingHall.getAdress());
                 updateWeddingHallResponse.setPrice(weddingHall.getPrice());
                 updateWeddingHallResponse.setDescription(weddingHall.getDescription());
                 return ResponseHandler.responseBuilder("Wedding hall Edited successfully", HttpStatus.OK,
@@ -389,6 +422,7 @@ public class WeddingHallServiceImpl implements WeddingHallService {
             AddRatingAndCommentResponse addRatingAndCommentResponse = new AddRatingAndCommentResponse();
             addRatingAndCommentResponse.setUsername(user.getFirstname() + " " + user.getLastname());
             addRatingAndCommentResponse.setRating(addRatingAndCommentRequest.getRating());
+            addRatingAndCommentResponse.setComment(addRatingAndCommentRequest.getComment());
             addRatingAndCommentResponse.setTime(timestamp);
 
             return ResponseHandler.responseBuilder("Thank you for your feedback :)", HttpStatus.OK, addRatingAndCommentResponse);
@@ -397,6 +431,16 @@ public class WeddingHallServiceImpl implements WeddingHallService {
         } catch (Exception e) {
             return ResponseHandler.responseBuilder("Failed to add rating", HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
+    }
+
+    private double calculateAverageRating(List<UserReview> reviews) {
+        if (reviews.isEmpty()) {
+            return 0.0; // Return 0 if no reviews are available
+        }
+        // Calculate the sum of all ratings
+        double sumOfRatings = reviews.stream().mapToDouble(UserReview::getRating).sum();
+        // Calculate the average rating
+        return sumOfRatings / reviews.size();
     }
 
 }

@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class AddRatingAndCommentResponse {
-    private int rating;
+    private double rating;
     private String comment;
     private String username;
     private String time;

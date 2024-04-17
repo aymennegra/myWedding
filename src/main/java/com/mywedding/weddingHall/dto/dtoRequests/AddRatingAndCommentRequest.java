@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class AddRatingAndCommentRequest {
     private long weddingHallId;
-    private int rating;
+    private double rating;
     private String comment;
 }

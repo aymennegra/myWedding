@@ -16,15 +16,12 @@ public class WeddingHall {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     private String name;
-
-    private String location;
-
+    private String adress;
+    private double latitude;
+    private double longitude;
     private int seats_number;
-
     private Double price;
-
     private String description;
 
     @ManyToOne
