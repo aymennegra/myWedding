@@ -8,4 +8,6 @@ public class UpdateProfileResponse {
     private String lastname;
     private String email;
     private String phone;
+    private String accessToken;
+    private String refreshToken;
 }

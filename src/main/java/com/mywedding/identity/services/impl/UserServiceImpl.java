@@ -7,6 +7,7 @@ import com.mywedding.identity.dto.dtoResponses.UpdateProfileResponse;
 import com.mywedding.identity.dto.dtoResponses.UserProfileResponse;
 import com.mywedding.identity.entities.User;
 import com.mywedding.identity.repository.UserRepository;
+import com.mywedding.identity.services.JWTService;
 import com.mywedding.identity.services.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,7 +18,9 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
 
 @Service
@@ -25,6 +28,8 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final JWTService jwtService;
+
 
     @Override
     public UserDetailsService userDetailsService() {
@@ -56,12 +61,16 @@ public class UserServiceImpl implements UserService {
     }
 
     public ResponseEntity<Object> updateUserProfile(UserProfileRequest userProfileRequest) {
-        try {// Retrieve the currently authenticated user's details from the security context
+        try {
+            UpdateProfileResponse userProfileResponse = new UpdateProfileResponse();
+            // Retrieve the currently authenticated user's details from the security context
             UserDetails userDetails = (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
             // Check if the user exists in the database based on the email (assuming email is the username)
             User user = userRepository.findByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            // Check if the new email already exists in the database
             Optional<User> existingUserOptional = userRepository.findByEmail(userProfileRequest.getEmail());
 
             // Update user information with the data from the userProfileRequest if not null
@@ -79,11 +88,19 @@ public class UserServiceImpl implements UserService {
 
             if (userProfileRequest.getEmail() == null) {
                 user.setEmail(user.getEmail());
-            } else if (existingUserOptional.isEmpty()) {
-                user.setEmail(userProfileRequest.getEmail());
+            } else if (existingUserOptional.isPresent()) {
+                return ResponseHandler.responseBuilder("Sorry, user already exists with this email.", HttpStatus.UNAUTHORIZED, new ArrayList<>());
             } else {
-                return ResponseHandler.responseBuilder("sorry ,user already exists", HttpStatus.UNAUTHORIZED,
-                        new ArrayList<>());
+                // Update user's email
+                user.setEmail(userProfileRequest.getEmail());
+
+                // Update user's refresh token if email is changed
+                String newRefreshToken = jwtService.generateRefreshToken(new HashMap<>(), user);
+                String extractedRefreshToken = jwtService.extractRefreshTokenId(newRefreshToken);
+                user.setRefreshToken(extractedRefreshToken);
+                var jwt = jwtService.generateToken(user);
+                userProfileResponse.setAccessToken(jwt);
+                userProfileResponse.setRefreshToken(extractedRefreshToken);
             }
 
             if (userProfileRequest.getPhone() == null) {
@@ -96,19 +113,18 @@ public class UserServiceImpl implements UserService {
             userRepository.save(user);
 
             // Construct and return a UserProfileResponse with updated user information
-            UpdateProfileResponse userProfileResponse = new UpdateProfileResponse();
+
             userProfileResponse.setFirstname(user.getFirstname());
             userProfileResponse.setLastname(user.getLastname());
             userProfileResponse.setEmail(user.getEmail());
             userProfileResponse.setPhone(user.getPhone());
-            // Add other profile information as needed
-            return ResponseHandler.responseBuilder("User Edited", HttpStatus.OK,
-                    userProfileResponse);
+
+            return ResponseHandler.responseBuilder("User Edited", HttpStatus.OK, userProfileResponse);
         } catch (Exception e) {
-            return ResponseHandler.responseBuilder("An error has occurred", HttpStatus.INTERNAL_SERVER_ERROR,
-                    new ArrayList<>());
+            return ResponseHandler.responseBuilder("An error has occurred", HttpStatus.INTERNAL_SERVER_ERROR, new ArrayList<>());
         }
     }
+
 
     public ResponseEntity<Object> updatePassword(UpdatePasswordRequest updatePasswordRequest) {
         // Retrieve the currently authenticated user's details from the security context
