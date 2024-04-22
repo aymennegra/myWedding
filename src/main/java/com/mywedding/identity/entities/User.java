@@ -1,7 +1,6 @@
 package com.mywedding.identity.entities;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.mywedding.weddingHall.entities.UserReview;
+import com.mywedding.weddingPlanner.plannerBaseEntities.UserReview;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
