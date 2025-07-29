@@ -1,25 +1,29 @@
 pipeline {
     agent any
+
     stages {
-        stage('Install dependencies') {
+        stage('Checkout') {
             steps {
-                script {
-                    sh('npm install')
-                }
+                checkout scm
             }
         }
+
+        stage('Build') {
+            steps {
+                sh './mvnw clean package -DskipTests'
+            }
+        }
+
         stage('Unit Test') {
             steps {
-                script {
-                    sh('npm test')
-                }
+                sh './mvnw test'
             }
         }
-        stage('Build application') {
+
+        stage('Run Application') {
             steps {
-                script {
-                    sh('npm run build-dev')
-                }
+                echo 'Application build complete. Ready to deploy or run.'
+                // Optionnel : sh 'java -jar target/monapp.jar'
             }
         }
     }
