@@ -1,9 +1,12 @@
 spring:
+  application:
+    name: mywedding-app
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/mywedding?useSSL=false&serverTimezone=UTC
     username: root
-    password: "" # Mets ton vrai mot de passe ici si besoin
+    password: 1234
 
   jpa:
     hibernate:
@@ -21,5 +24,6 @@ spring:
 server:
   port: 8080
 
-spring.resources:
-  static-locations: classpath:/static/img/
+spring:
+  resources:
+    static-locations: classpath:/static/img/
