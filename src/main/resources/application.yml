@@ -4,25 +4,25 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/mywedding
+    url: jdbc:mysql://localhost:3306/mywedding?useSSL=false&serverTimezone=UTC
     username: root
-    password:
+    password: "" # Ajoute un mot de passe si nécessaire
 
   jpa:
     hibernate:
       ddl-auto: update
-      show-sql: false
-      properties:
-        hibernate.format_sql: true
-      database-platform: org.hibernate.dialect.MySQL8Dialect
-
-  server:
-    port: 8080
-
-resources:
-  static-locations: classpath:/src/img/
+    show-sql: false
+    properties:
+      hibernate.format_sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
 
   servlet:
     multipart:
       max-file-size: 10MB
       max-request-size: 20MB
+
+server:
+  port: 8080
+
+spring.resources:
+  static-locations: classpath:/static/img/
