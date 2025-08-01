@@ -1,20 +1,17 @@
 spring:
-  application:
-    name: mywedding-app
-
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/mywedding?useSSL=false&serverTimezone=UTC
     username: root
-    password: "" # Ajoute un mot de passe si nécessaire
+    password: "" # Mets ton vrai mot de passe ici si besoin
 
   jpa:
     hibernate:
       ddl-auto: update
+    database-platform: org.hibernate.dialect.MySQL8Dialect
     show-sql: false
     properties:
       hibernate.format_sql: true
-    database-platform: org.hibernate.dialect.MySQL8Dialect
 
   servlet:
     multipart:
